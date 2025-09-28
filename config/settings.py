@@ -4,7 +4,7 @@ from pathlib import Path
 from django.conf.global_settings import MEDIA_ROOT, MEDIA_URL
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
 ALLOWED_HOSTS = []
 
@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'rest_framework',
     'django_filters',
     'users',
@@ -71,8 +72,7 @@ REST_FRAMEWORK = {
         # ...
     ),
 }
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
 
 DATABASES = {
     'default': {
