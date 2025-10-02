@@ -66,6 +66,14 @@ class Lesson(models.Model):
         verbose_name='Превью урока'
     )
     video_url = models.URLField(verbose_name='Ссылка на видео')
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='lessons',
+        blank=True,
+        null=True,
+        verbose_name='Владелец урока'
+    )
 
     def __str__(self):
         return self.title
