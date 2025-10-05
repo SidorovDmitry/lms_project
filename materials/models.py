@@ -81,3 +81,23 @@ class Lesson(models.Model):
     class Meta:
         verbose_name = 'Урок'
         verbose_name_plural = 'Уроки'
+
+class Subscription(models.Model):
+    """
+    Модель подписки пользователя на курс.
+
+    Представляет связь между пользователем и курсом, указывая,
+    что пользователь подписан на данный курс. Каждая пара
+    (пользователь, курс) должна быть уникальной.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'course')
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        return f'{self.user} → {self.course}'
