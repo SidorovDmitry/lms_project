@@ -1,7 +1,9 @@
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
 from .serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator,IsOwnerOrModeratorReadOnly
 
@@ -53,3 +55,37 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.save(owner=self.request.user)
+        
+
+class SubscriptionAPIView(APIView):
+    """ Представление для управления подпиской пользователя на курс."""
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        if not course_id:
+            return Response(
+                {"error": "Не указан course_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            course_item = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response(
+                {"error": "Курс не найден"},
+                status=status.HTTP_400_BAD_REQUEST  # ← Меняем сюда
+            )
+
+        subs_item = Subscription.objects.filter(user=user, course=course_item)
+
+        if subs_item.exists():
+            subs_item.delete()
+            message = 'подписка удалена'
+        else:
+            Subscription.objects.create(user=user, course=course_item)
+            message = 'подписка добавлена'
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
+        
