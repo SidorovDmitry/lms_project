@@ -27,27 +27,56 @@ REST API для образовательной платформы с подде�
 ## 📁 Структура проекта
 ```commandline
 lms_project/
-├── config/               # Настройки Django (settings, urls, asgi, wsgi)
-├── materials/            # Курсы и уроки
-│   ├── migrations/
-│   ├── models.py         # Course, Lesson
-│   ├── serializers.py    # CourseSerializer, LessonSerializer
-│   ├── views.py          # CourseViewSet, LessonListCreateView и др.
-│   └── urls.py           # URL-маршруты для materials
-├── users/                # Пользователи и платежи
-│   ├── migrations/
-│   ├── models.py         # User, Payment
-│   ├── filters.py        # PaymentFilter
-│   ├── serializers.py    # UserSerializer, PaymentSerializer
-│   ├── views.py          # PaymentViewSet
-│   └── admin.py          # Регистрация моделей в админке
-├── .env                  # Переменные окружения
-├── .env.sample           # Шаблон переменных
-├── .gitignore            # Исключения для Git
-├── manage.py             # Утилита управления проектом
-├── poetry.lock           # Зафиксированные версии пакетов
-├── pyproject.toml        # Конфигурация Poetry
-└── README.md             # Документация проекта 
+│
+├── config/                     # 📁 Папка с настройками Django (вместо стандартного <project_name>/)
+│   │                           #    — улучшает читаемость и позволяет легко масштабировать настройки (dev/prod/test).
+│   ├── __init__.py             # 🐍 Делает папку Python-пакетом.
+│   ├── asgi.py                 # 🌐 Точка входа для ASGI-серверов (для асинхронных функций, WebSocket).
+│   ├── settings.py             # ⚙️ Основной файл настроек: БД, приложения, middleware, безопасность.
+│   │                           #    → Обязательно: AUTH_USER_MODEL = 'users.User'
+│   ├── urls.py                 # 🧭 Главный маршрутизатор: подключает URL-паттерны из приложений (users, materials).
+│   └── wsgi.py                 # 🖥️ Точка входа для WSGI-серверов (Gunicorn, Apache).
+│
+├── materials/                  # 📁 Приложение: управление учебными материалами (курсы и уроки)
+│   │                           #    — соблюдает принцип единственной ответственности.
+│   ├── __init__.py             # 🐍 Обязательный файл для Python-пакета.
+│   ├── admin.py                # 👮 Регистрация моделей Course/Lesson в Django Admin.
+│   ├── apps.py                 # 🏷️ Конфигурация приложения (имя, verbose_name).
+│   ├── migrations/             # 🔄 Папка для миграций базы данных (генерируются автоматически).
+│   │   └── __init__.py         # 🐍 Пустой файл для импорта.
+│   ├── models.py               # 🗃️ Модели: Course, Lesson (связаны с пользователем как автором).
+│   ├── serializers.py          # 📤 Сериализаторы (если используется DRF) для API.
+│   ├── tests.py                # 🧪 Тесты: проверка логики моделей, представлений, прав доступа.
+│   ├── urls.py                 # 🔗 URL-маршруты, специфичные для материалов (например, /courses/).
+│   └── views.py                # 🖼️ Логика обработки запросов (CBV/FBV или DRF ViewSets).
+│
+├── users/                      # 📁 Приложение: пользователи, профили, платежи
+│   │                           #    — централизует всю логику, связанную с аккаунтами.
+│   ├── __init__.py             # 🐍 Обязательный файл.
+│   ├── admin.py                # 👮 Настройка отображения User и Payment в админке.
+│   ├── apps.py                 # 🏷️ Конфигурация приложения users.
+│   ├── fixtures/               # 📦 (Опционально) Тестовые данные для загрузки через loaddata.
+│   │   └── __init__.py         # 🐍 Пустой файл.
+│   ├── migrations/             # 🔄 Миграции для кастомного пользователя и платежей.
+│   │   └── __init__.py         # 🐍 Пустой файл.
+│   ├── models.py               # 👤 Содержит:
+│   │                           #    - User(AbstractUser) с email как логином,
+│   │                           #    - Payment (связь с Course/Lesson через строковые ссылки).
+│   ├── permissions.py          # 🔒 Кастомные права доступа (например, "только владелец может редактировать").
+│   ├── serializers.py          # 📤 Сериализаторы для User и Payment (для REST API).
+│   ├── tests.py                # 🧪 Тесты регистрации, авторизации, создания платежей.
+│   ├── urls.py                 # 🔗 Маршруты: /profile/, /payments/ и т.д.
+│   └── views.py                # 🖼️ Обработка запросов: регистрация, профиль, история платежей.
+│
+├── .env                        # 🔐 Секретные переменные: SECRET_KEY, DB_PASSWORD, EMAIL_PASS.
+│                               #    ❌ НИКОГДА не коммитьте в Git!
+├── .env.sample                 # 📝 Пример .env для новых разработчиков (без реальных значений).
+├── .gitignore                  # 🚫 Исключает временные, системные и секретные файлы из Git.
+├── manage.py                   # 🛠️ Командная утилита Django (runserver, migrate, createsuperuser...).
+├── poetry.lock                 # 🔒 Фиксирует точные версии зависимостей (для воспроизводимости).
+├── pyproject.toml              # 📦 Основной файл Poetry: зависимости, метаданные, скрипты.
+├── README.md                   # 📘 Документация: как запустить проект, требования, архитектура.
+└── requirements.txt            # 📜 (Опционально) Альтернатива Poetry для pip-зависимостей.
 ```
 ## 🚀 Установка и запуск
 

@@ -1,36 +1,60 @@
 from rest_framework import serializers
-from .models import User, Payment
+from django.contrib.auth import authenticate, get_user_model
+from .models import Payment
+
+User = get_user_model()
 
 
+# Сериализатор для отображения и редактирования профиля пользователя
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели пользователя (User).
-
-    Используется для преобразования данных пользователя в JSON и обратно.
-    Включает основные профильные поля: email, телефон, город и аватар.
-    Поле 'id' включено для идентификации объекта.
-
-    Пароль и другие чувствительные данные намеренно исключены из сериализации
-    в целях безопасности.
-    """
-
     class Meta:
         model = User
         fields = ['id', 'email', 'phone', 'city', 'avatar']
+        read_only_fields = ['id']
 
 
+# Сериализатор регистрации нового пользователя
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'password', 'phone', 'city']
+
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
+
+    def create(self, validated_data):
+
+        validated_data.pop('avatar', None)
+        user = User.objects.create_user(**validated_data)
+        return user
+
+
+# Сериализатор входа (логин по email и паролю)
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            raise serializers.ValidationError("Требуется email и пароль")
+
+        user = authenticate(username=email, password=password)
+
+        if not user:
+            raise serializers.ValidationError("Неверные учетные данные")
+
+        data['user'] = user
+        return data
+
+
+# Сериализатор платежей
 class PaymentSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели платежа (Payment).
-
-    Предоставляет полное представление платежа, включая пользователя,
-    оплаченный курс или урок, сумму, способ и дату оплаты.
-
-    Использует все поля модели (fields = '__all__'), что удобно для
-    внутреннего API или админских целей. В публичном API рекомендуется
-    явно указывать нужные поля и скрывать чувствительную информацию.
-    """
-
     class Meta:
         model = Payment
         fields = '__all__'
