@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Course, Lesson, Subscription
-from .validators import validate_youtube_url
+from .validators import VideoUrlValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class LessonSerializer(serializers.ModelSerializer):
     Предоставляет данные об отдельном уроке, включая его связь с курсом.
     Поле 'course' содержит ID связанного курса (только для чтения по умолчанию)."""
 
-    video_url = serializers.URLField(validators=[validate_youtube_url])
+    video_url = serializers.URLField(validators=[VideoUrlValidator])
 
     class Meta:
         model = Lesson
