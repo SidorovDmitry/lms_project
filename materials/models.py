@@ -21,6 +21,13 @@ class Course(models.Model):
         blank=True,
         null=True,
         verbose_name='Описание курса'
+
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Цена курса'
     )
     owner = models.ForeignKey(
         User,
@@ -30,6 +37,37 @@ class Course(models.Model):
         null=True,
         verbose_name='Владелец курса'
     )
+
+    # Поля для интеграции с Stripe
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Stripe Product ID'
+    )
+
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Stripe Price ID'
+    )
+
+    def get_or_create_stripe_product(self):
+        from payments.services import create_stripe_product, create_stripe_price
+
+        if not self.stripe_product_id:
+            product = create_stripe_product(self)
+            self.stripe_product_id = product.id
+            self.save()
+
+        if not self.stripe_price_id:
+            price = create_stripe_price(int(self.price), self.stripe_product_id)
+            self.stripe_price_id = price.id
+            self.save()
+
+        return self.stripe_product_id, self.stripe_price_id
+
 
     def __str__(self):
         return self.title
