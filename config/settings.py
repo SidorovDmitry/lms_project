@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework',
     'django_filters',
+    'drf_spectacular',
+
     'users',
     'materials',
 
@@ -80,6 +82,16 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',  # Поддержка фильтрации через django-filter
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+    ,
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'LMS Project API',
+    'DESCRIPTION': 'Платформа управления курсами и уроками',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {'deepLinking': True},
 }
 
 # Настройки срока действия токенов
@@ -138,3 +150,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
+
+
+
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
