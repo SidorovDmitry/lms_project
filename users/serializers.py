@@ -19,16 +19,22 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'phone', 'city']
+        fields = ['id', 'email', 'password', 'phone', 'city', 'avatar']
 
         extra_kwargs = {
             'password': {'write_only': True},
+            'avatar': {'read_only': True},
         }
 
     def create(self, validated_data):
 
-        validated_data.pop('avatar', None)
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone=validated_data.get('phone', None),
+            city=validated_data.get('city', None),
+            avatar=validated_data.get('avatar', None)
+        )
         return user
 
 
@@ -41,15 +47,16 @@ class LoginSerializer(serializers.Serializer):
         email = data.get('email')
         password = data.get('password')
 
-        if not email or not password:
-            raise serializers.ValidationError("Требуется email и пароль")
+        if email and password:
+            user = authenticate(username=email, password=password)
 
-        user = authenticate(username=email, password=password)
+            if user:
+                data['user'] = user
+            else:
+                raise serializers.ValidationError("Неверные учетные данные")
+        else:
+            raise serializers.ValidationError("Необходимо указать email и пароль")
 
-        if not user:
-            raise serializers.ValidationError("Неверные учетные данные")
-
-        data['user'] = user
         return data
 
 

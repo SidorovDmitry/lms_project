@@ -88,22 +88,25 @@ class User(AbstractUser):
 class Payment(models.Model):
     """
     Модель платежа за курс или отдельный урок.
-
-    Каждый платёж привязан к пользователю и может относиться либо к курсу, либо к уроку
-    (одно из полей course или lesson должно быть заполнено, но это не проверяется на уровне БД).
-    Поддерживает два способа оплаты: наличные и банковский перевод.
-    Дата платежа устанавливается автоматически при создании записи.
     """
-
     PAYMENT_METHOD_CHOICES = [
         ('CASH', 'Наличные'),
         ('TRANSFER', 'Перевод на счёт'),
     ]
 
+    PAYMENT_STATUS_CHOICES = [
+        ('created', 'Создано'),
+        ('paid', 'Оплачено'),
+        ('unpaid', 'Не оплачено'),
+        ('failed', 'Ошибка оплаты'),
+        ('cancelled', 'Отменено'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь'
+        verbose_name='Пользователь',
+        related_name='payments'  # Добавил related_name
     )
     payment_date = models.DateTimeField(
         auto_now_add=True,
@@ -114,19 +117,43 @@ class Payment(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Оплаченный курс'
+        verbose_name='Оплаченный курс',
+        related_name='payments'  # Добавил related_name
     )
     lesson = models.ForeignKey(
         'materials.Lesson',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Оплаченный урок'
+        verbose_name='Оплаченный урок',
+        related_name='payments'  # Добавил related_name
     )
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Сумма оплаты'
+    amount = models.PositiveIntegerField(
+        verbose_name='Сумма (в центах)',
+        help_text='Сумма в центах (например, 999 = $9.99)'
+    )
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Stripe Product ID'
+    )
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Stripe Price ID'
+    )
+    session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Stripe Session ID'
+    )
+    payment_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Ссылка на оплату'
     )
     payment_method = models.CharField(
         max_length=10,
@@ -134,10 +161,49 @@ class Payment(models.Model):
         default='TRANSFER',
         verbose_name='Способ оплаты'
     )
+    status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='created',
+        verbose_name='Статус платежа'
+    )
+
+    def clean(self):
+        """Проверка, что указан либо курс, либо урок"""
+        from django.core.exceptions import ValidationError
+        if self.course and self.lesson:
+            raise ValidationError('Платёж может быть привязан только к курсу ИЛИ уроку, но не к обоим.')
+        if not self.course and not self.lesson:
+            raise ValidationError('Платёж должен быть привязан к курсу или уроку.')
+
+    @property
+    def amount_in_dollars(self):
+        """Возвращает сумму в долларах"""
+        return self.amount / 100.0
+
+    @property
+    def is_paid(self):
+        """Проверяет, оплачен ли платёж"""
+        return self.status == 'paid'
+
+    @property
+    def product_name(self):
+        """Возвращает название продукта (курса или урока)"""
+        if self.course:
+            return self.course.title
+        elif self.lesson:
+            return self.lesson.title
+        return "Неизвестный продукт"
 
     def __str__(self):
-        return f"{self.user} - {self.amount} ({self.get_payment_method_display()})"
+        return f"{self.user} - ${self.amount_in_dollars:.2f} ({self.get_payment_method_display()})"
 
     class Meta:
         verbose_name = 'Платёж'
         verbose_name_plural = 'Платежи'
+        ordering = ['-payment_date']  # Добавил сортировку по умолчанию
+        indexes = [
+            models.Index(fields=['user', 'payment_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['session_id']),
+        ]
