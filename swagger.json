@@ -1,0 +1,1074 @@
+"openapi": 3.0.3
+info:
+  title: LMS Project API
+  version: 1.0.0
+  description: Платформа управления курсами и уроками
+paths:
+  /api/materials/courses/:
+    get:
+      operationId: api_materials_courses_list
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+          description: ''
+    post:
+      operationId: api_materials_courses_create
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Course'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Course'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+  /api/materials/courses/{id}/:
+    get:
+      operationId: api_materials_courses_retrieve
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Курс.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+    put:
+      operationId: api_materials_courses_update
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Курс.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Course'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Course'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+    patch:
+      operationId: api_materials_courses_partial_update
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Курс.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+    delete:
+      operationId: api_materials_courses_destroy
+      description: |-
+        ViewSet для управления курсами.
+        Предоставляет полный набор операций CRUD (создание, чтение, обновление, удаление)
+        для модели Course.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Курс.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/materials/lessons/:
+    get:
+      operationId: api_materials_lessons_list
+      description: Представление для отображения списка уроков и создания нового урока.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lesson'
+          description: ''
+    post:
+      operationId: api_materials_lessons_create
+      description: Представление для отображения списка уроков и создания нового урока.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+          description: ''
+  /api/materials/lessons/{id}/:
+    get:
+      operationId: api_materials_lessons_retrieve
+      description: Представление для получения, обновления и удаления отдельного урока.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+          description: ''
+    put:
+      operationId: api_materials_lessons_update
+      description: Представление для получения, обновления и удаления отдельного урока.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Lesson'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+          description: ''
+    patch:
+      operationId: api_materials_lessons_partial_update
+      description: Представление для получения, обновления и удаления отдельного урока.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLesson'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLesson'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLesson'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+          description: ''
+    delete:
+      operationId: api_materials_lessons_destroy
+      description: Представление для получения, обновления и удаления отдельного урока.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/materials/subscribe/:
+    post:
+      operationId: api_materials_subscribe_create
+      description: Добавляет или удаляет подписку пользователя на указанный курс
+      summary: Управление подпиской на курс
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                course_id:
+                  type: integer
+                  description: ID курса для подписки/отписки
+                  example: 1
+              required:
+              - course_id
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Сообщение о результате операции
+                    examples:
+                    - подписка добавлена
+                    - подписка удалена
+              examples:
+                ПримерУспешнойПодписки:
+                  value:
+                    message: подписка добавлена
+                  summary: Пример успешной подписки
+                ПримерУспешнойОтписки:
+                  value:
+                    message: подписка удалена
+                  summary: Пример успешной отписки
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Сообщение об ошибке
+                    examples:
+                    - Не указан course_id
+                    - Курс не найден
+              examples:
+                ПримерОшибки:
+                  value:
+                    error: Курс не найден
+                  summary: Пример ошибки
+          description: ''
+  /api/payments/course/{course_id}/:
+    post:
+      operationId: api_payments_course_create
+      description: Создает продукт, цену и сессию оплаты Stripe для указанного курса.
+        Возвращает URL для оплаты и ID сессии.
+      summary: Создание платежной сессии Stripe для курса
+      parameters:
+      - in: path
+        name: course_id
+        schema:
+          type: integer
+        description: ID курса, для которого создается платежная сессия.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_url:
+                    type: string
+                    description: URL для оплаты в Stripe.
+                  session_id:
+                    type: string
+                    description: ID сессии Stripe.
+                  amount:
+                    type: integer
+                    description: Сумма к оплате (в центах).
+                  course:
+                    type: string
+                    description: Название курса.
+                example:
+                  payment_url: https://checkout.stripe.com/...
+                  session_id: cs_test_...
+                  amount: 10000
+                  course: Название курса
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Курс не найден
+          description: ''
+  /api/payments/payments/:
+    get:
+      operationId: api_payments_payments_list
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      parameters:
+      - in: query
+        name: course
+        schema:
+          type: integer
+        description: ID курса
+      - in: query
+        name: lesson
+        schema:
+          type: integer
+        description: ID урока
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: payment_method
+        schema:
+          type: string
+          title: Способ оплаты
+          enum:
+          - CASH
+          - TRANSFER
+        description: |-
+          Способ оплаты
+
+          * `CASH` - Наличные
+          * `TRANSFER` - Перевод на счёт
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+          description: ''
+    post:
+      operationId: api_payments_payments_create
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/payments/payments/{id}/:
+    get:
+      operationId: api_payments_payments_retrieve
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Платёж.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    put:
+      operationId: api_payments_payments_update
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Платёж.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    patch:
+      operationId: api_payments_payments_partial_update
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Платёж.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    delete:
+      operationId: api_payments_payments_destroy
+      description: |-
+        API эндпоинт для управления платежами.
+        Поддерживает:
+        - Фильтрацию по курсу, уроку и способу оплаты
+        - Сортировку по дате оплаты
+        - Разграничение прав: только администратор может редактировать данные
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Платёж.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/login/:
+    post:
+      operationId: api_users_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyTokenObtainPair'
+          description: ''
+  /api/users/register/:
+    post:
+      operationId: api_users_register_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /courses/{course_id}/pay/:
+    post:
+      operationId: courses_pay_create
+      description: Создает продукт, цену и сессию оплаты Stripe для указанного курса.
+        Возвращает URL для оплаты и ID сессии.
+      summary: Создание платежной сессии Stripe для курса
+      parameters:
+      - in: path
+        name: course_id
+        schema:
+          type: integer
+        description: ID курса, для которого создается платежная сессия.
+        required: true
+      tags:
+      - courses
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_url:
+                    type: string
+                    description: URL для оплаты в Stripe.
+                  session_id:
+                    type: string
+                    description: ID сессии Stripe.
+                  amount:
+                    type: integer
+                    description: Сумма к оплате (в центах).
+                  course:
+                    type: string
+                    description: Название курса.
+                example:
+                  payment_url: https://checkout.stripe.com/...
+                  session_id: cs_test_...
+                  amount: 10000
+                  course: Название курса
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Курс не найден
+          description: ''
+components:
+  schemas:
+    Course:
+      type: object
+      description: Сериализатор для модели Course.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название курса
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          title: Описание курса
+        preview:
+          type: string
+          format: uri
+          nullable: true
+          title: Превью курса
+        owner:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Владелец курса
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+          readOnly: true
+        stripe_price_id:
+          type: string
+          readOnly: true
+        stripe_product_id:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - lessons
+      - owner
+      - stripe_price_id
+      - stripe_product_id
+      - title
+    Lesson:
+      type: object
+      description: |-
+        Сериализатор для модели Lesson.
+        Предоставляет данные об отдельном уроке, включая его связь с курсом.
+        Поле 'course' содержит ID связанного курса (только для чтения по умолчанию).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название урока
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          title: Описание урока
+        preview:
+          type: string
+          format: uri
+          nullable: true
+          title: Превью урока
+        video_url:
+          type: string
+          format: uri
+        course:
+          type: integer
+          title: Курс
+      required:
+      - course
+      - id
+      - title
+      - video_url
+    MyTokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    PatchedCourse:
+      type: object
+      description: Сериализатор для модели Course.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название курса
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          title: Описание курса
+        preview:
+          type: string
+          format: uri
+          nullable: true
+          title: Превью курса
+        owner:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Владелец курса
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+          readOnly: true
+        stripe_price_id:
+          type: string
+          readOnly: true
+        stripe_product_id:
+          type: string
+          readOnly: true
+    PatchedLesson:
+      type: object
+      description: |-
+        Сериализатор для модели Lesson.
+        Предоставляет данные об отдельном уроке, включая его связь с курсом.
+        Поле 'course' содержит ID связанного курса (только для чтения по умолчанию).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название урока
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          title: Описание урока
+        preview:
+          type: string
+          format: uri
+          nullable: true
+          title: Превью урока
+        video_url:
+          type: string
+          format: uri
+        course:
+          type: integer
+          title: Курс
+    PatchedPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        payment_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата оплаты
+        amount:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Сумма (в центах)
+          description: Сумма в центах (например, 999 = $9.99)
+        stripe_product_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        stripe_price_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        session_id:
+          type: string
+          nullable: true
+          title: Stripe Session ID
+          maxLength: 255
+        payment_url:
+          type: string
+          format: uri
+          nullable: true
+          title: Ссылка на оплату
+          maxLength: 200
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          title: Способ оплаты
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус платежа
+        user:
+          type: integer
+          title: Пользователь
+        course:
+          type: integer
+          nullable: true
+          title: Оплаченный курс
+        lesson:
+          type: integer
+          nullable: true
+          title: Оплаченный урок
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        payment_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата оплаты
+        amount:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Сумма (в центах)
+          description: Сумма в центах (например, 999 = $9.99)
+        stripe_product_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        stripe_price_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        session_id:
+          type: string
+          nullable: true
+          title: Stripe Session ID
+          maxLength: 255
+        payment_url:
+          type: string
+          format: uri
+          nullable: true
+          title: Ссылка на оплату
+          maxLength: 200
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          title: Способ оплаты
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус платежа
+        user:
+          type: integer
+          title: Пользователь
+        course:
+          type: integer
+          nullable: true
+          title: Оплаченный курс
+        lesson:
+          type: integer
+          nullable: true
+          title: Оплаченный урок
+      required:
+      - amount
+      - id
+      - payment_date
+      - user
+    PaymentMethodEnum:
+      enum:
+      - CASH
+      - TRANSFER
+      type: string
+      description: |-
+        * `CASH` - Наличные
+        * `TRANSFER` - Перевод на счёт
+    Register:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Электронная почта
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        phone:
+          type: string
+          nullable: true
+          title: Телефон
+          maxLength: 20
+        city:
+          type: string
+          nullable: true
+          title: Город
+          maxLength: 100
+        avatar:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          title: Аватар
+      required:
+      - avatar
+      - email
+      - id
+      - password
+    StatusEnum:
+      enum:
+      - created
+      - paid
+      - unpaid
+      - failed
+      - cancelled
+      type: string
+      description: |-
+        * `created` - Создано
+        * `paid` - Оплачено
+        * `unpaid` - Не оплачено
+        * `failed` - Ошибка оплаты
+        * `cancelled` - Отменено
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
