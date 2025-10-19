@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, generics, serializers
+from rest_framework import viewsets, permissions, generics
 from .models import User, Payment
 from .serializers import UserSerializer, RegisterSerializer, PaymentSerializer
 from .filters import PaymentFilter
