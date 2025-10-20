@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework import viewsets, generics, status, serializers
 from rest_framework.permissions import IsAuthenticated
@@ -36,7 +39,15 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         """Обновление курса и рассылка уведомлений подписчикам."""
         course = serializer.save()
-        check_and_notify_subscribers.deley(course.id)
+        now = timezone.now()
+
+        if (
+                course.last_notification_sent is None or
+                (now - course.last_notification_sent) >= timedelta(hours=4)
+        ):
+            check_and_notify_subscribers.delay(course.id)
+            course.last_notification_sent = now
+            course.save(update_fields=['last_notification_sent'])
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
