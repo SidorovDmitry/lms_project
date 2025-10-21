@@ -14,7 +14,7 @@ def check_and_notify_subscribers(course_id):
     except Course.DoesNotExist:
         return
 
-    subscribers = Subscription.objects.filter(course=course, user__is_active=True)
+    subscribers = Subscription.objects.filter(course=course, user__is_active=True).select_related('user')
 
     for subscriber in subscribers:
         send_mail(
