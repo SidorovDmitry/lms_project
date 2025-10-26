@@ -52,6 +52,10 @@ class Course(models.Model):
         null=True,
         verbose_name='Stripe Price ID'
     )
+    last_notification_sent = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     def get_or_create_stripe_product(self):
         from payments.services import create_stripe_product, create_stripe_price

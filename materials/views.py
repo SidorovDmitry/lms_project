@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework import viewsets, generics, status, serializers
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +10,8 @@ from rest_framework.views import APIView
 from .models import Course, Lesson, Subscription
 from .serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator,IsOwnerOrModeratorReadOnly
+from .tasks import check_and_notify_subscribers
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     """ ViewSet для управления курсами.
@@ -18,6 +23,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """ Проверка прав доступа. """
         if self.action == 'create':
             self.permission_classes = [~IsModerator & IsAuthenticated]  # Не модератор может создать
         elif self.action in ['update', 'partial_update']:
@@ -27,7 +33,21 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        """Cоздание курса и привязка владельца."""
         serializer.save(owner=self.request.user)  # Привязка к владельцу
+
+    def perform_update(self, serializer):
+        """Обновление курса и рассылка уведомлений подписчикам."""
+        course = serializer.save()
+        now = timezone.now()
+
+        if (
+                course.last_notification_sent is None or
+                (now - course.last_notification_sent) >= timedelta(hours=4)
+        ):
+            check_and_notify_subscribers.delay(course.id)
+            course.last_notification_sent = now
+            course.save(update_fields=['last_notification_sent'])
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
@@ -38,11 +58,13 @@ class LessonListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """ Проверка прав доступа. """
         if self.request.method == 'POST':
             self.permission_classes = [~IsModerator & IsAuthenticated]  # Создание — не модератор
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        """Привязка владельца и курса к уроку."""
         course_id = self.kwargs.get('course_id') or self.request.data.get('course')
 
         if not course_id:
