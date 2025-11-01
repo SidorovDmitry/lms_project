@@ -9,9 +9,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Установка Poetry
-RUN pip install --no-cache-dir poetry
-
 # Копируем requirements.txt
 COPY requirements.txt .
 
