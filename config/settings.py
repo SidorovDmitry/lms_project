@@ -19,7 +19,10 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # ПРЕДУПРЕЖДЕНИЕ О БЕЗОПАСНОСТИ: не запускайте приложение в рабочей среде с включенной отладкой!
 DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    '89.169.166.129',]
 
 
 # Application definition
