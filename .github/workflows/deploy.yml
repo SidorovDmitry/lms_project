@@ -101,12 +101,12 @@ jobs:
             echo "🚀 Deploying to production"
 
             # Проверяем, что папка существует
-            if [ ! -d "/home/${SSH_USERNAME}/lms_project" ]; then
-              echo "❌ Directory ~/lms_project not found. Clone manually first."
+            if [ ! -d "/home/${SSH_USERNAME}/projects/lms_project" ]; then
+              echo "❌ Directory ~/projects/lms_project not found. Clone manually first."
               exit 1
             fi
 
-            cd /home/${SSH_USERNAME}/lms_project
+            cd /home/${SSH_USERNAME}/projects/lms_project
 
             # Сохраняем локальные изменения (если есть)
             echo "💾 Stashing any local changes..."
