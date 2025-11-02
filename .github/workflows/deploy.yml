@@ -3,10 +3,14 @@ name: CI/CD Pipeline with Docker
 on:
   push:
     branches:
-      - feature_35_2  # ✅ Теперь везде одна ветка
+      - feature_35_2
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - main
 
 env:
-  # Общие переменные
   POSTGRES_DB: lmsdb
   POSTGRES_USER: lmsuser
   POSTGRES_PASSWORD: lmspass
@@ -42,15 +46,18 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Set up Docker
-        uses: docker/setup-docker@v3
-        with:
-          compose-version: v2.26.1
 
       - name: Copy .env for testing
         run: |
@@ -80,56 +87,128 @@ jobs:
           docker compose -f docker-compose.yml run --rm web flake8 . --exclude=*.pyc
 
   deploy:
+    if: github.ref == 'refs/heads/feature_35_2'
     needs: test
     runs-on: ubuntu-latest
-    environment: production  # Позволяет настроить approval (опционально)
-    concurrency: production  # Защита от параллельных деплоев
+    environment: production
+    concurrency: production
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@v1.2.0  # ✅ Вместо @master
+      - name: Deploy to production
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e  # Останавливаемся при ошибке
+            set -e
+            echo "🚀 Deploying to PRODUCTION"
 
-            echo "🚀 Deploying to production"
-
-            # Проверяем, что папка существует
-            if [ ! -d "/home/${SSH_USERNAME}/projects/lms_project" ]; then
-              echo "❌ Directory ~/projects/lms_project not found. Clone manually first."
+            cd /home/${SSH_USERNAME}/projects/lms_project || {
+              echo "❌ Directory not found. Clone manually first."
               exit 1
-            fi
+            }
 
-            cd /home/${SSH_USERNAME}/projects/lms_project
-
-            # Сохраняем локальные изменения (если есть)
-            echo "💾 Stashing any local changes..."
             git stash --all || true
-
-            # Переключаемся на нужную ветку
-            echo "SetBranch to feature_35_2"
             git fetch origin
             git checkout feature_35_2
-
-            echo "📥 Pulling latest changes"
             git pull origin feature_35_2
 
-            echo "🛑 Stopping containers"
             docker compose down
-
-            echo "🏗️ Building and starting services"
             docker compose up -d --build
 
-            echo "🔧 Running migrations"
             docker compose exec -T web python manage.py migrate --noinput
-
-            echo "📦 Collecting static files"
             docker compose exec -T web python manage.py collectstatic --noinput --clear
 
-            echo "✅ Deploy completed successfully"
+            echo "✅ Production deploy complete"
+
+      - name: Notify via Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ Production deploy complete!
+            Repo: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            By: ${{ github.actor }}
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "🚀 Deploying to STAGING"
+
+            cd /home/${SSH_USERNAME}/projects/lms_project || {
+              echo "❌ Directory not found. Clone manually first."
+              exit 1
+            }
+
+            git stash --all || true
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+
+            docker compose down
+            docker compose up -d --build
+
+            docker compose exec -T web python manage.py migrate --noinput
+            docker compose exec -T web python manage.py collectstatic --noinput --clear
+
+            echo "✅ Staging deploy complete"
+
+      - name: Notify via Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🧪 Staging deploy complete!
+            Repo: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            By: ${{ github.actor }}
+
+  pr-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run linter
+        run: |
+          flake8 . --exclude=*.pyc
+
+      - name: Run tests
+        run: |
+          python manage.py test
