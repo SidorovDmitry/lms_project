@@ -3,95 +3,133 @@ name: CI/CD Pipeline with Docker
 on:
   push:
     branches:
-      - feature_35_2
+      - feature_35_2  # ✅ Теперь везде одна ветка
+
+env:
+  # Общие переменные
+  POSTGRES_DB: lmsdb
+  POSTGRES_USER: lmsuser
+  POSTGRES_PASSWORD: lmspass
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Docker
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
         run: |
-          sudo apt remove -y docker docker-engine docker.io containerd runc || true
-          sudo rm -rf /var/lib/docker /etc/docker || true
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-          sudo apt update && sudo apt install -y \
-            apt-transport-https \
-            ca-certificates \
-            curl \
-            gnupg-agent \
-            software-properties-common
+      - name: Set up Docker
+        uses: docker/setup-docker@v3
+        with:
+          compose-version: v2.26.1
 
-          curl -fsSL https://get.docker.com  -o get-docker.sh
-          sudo sh get-docker.sh
-          sudo usermod -aG docker $USER
-
-          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-          mkdir -p $DOCKER_CONFIG/cli-plugins
-          curl -SL https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-linux-x86_64  \
-            -o $DOCKER_CONFIG/cli-plugins/docker-compose
-          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
-          sudo ln -s $DOCKER_CONFIG/cli-plugins/docker-compose /usr/local/bin/docker-compose
-
-          docker --version && docker-compose --version
-
-      - name: Build and Start Services
+      - name: Copy .env for testing
         run: |
-          docker-compose build
-          docker-compose up -d db redis
+          cp .env.sample .env || echo "Using defaults"
 
-      - name: Wait for PostgreSQL to be ready
+      - name: Build and start db + redis
         run: |
-          until docker-compose exec -T db pg_isready -h db -U $DB_USER -d $DB_NAME; do
+          docker compose -f docker-compose.yml up -d db redis
+
+      - name: Wait for PostgreSQL
+        run: |
+          until docker exec $(docker ps -q -f name=db) pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do
             echo "⏳ Waiting for PostgreSQL..."
             sleep 5
           done
 
       - name: Apply migrations
         run: |
-          docker-compose run --rm web python manage.py migrate
+          docker compose -f docker-compose.yml run --rm web python manage.py migrate
 
-      - name: Run tests in Django container
+      - name: Run tests
         run: |
-          docker-compose run --rm web python manage.py test
+          docker compose -f docker-compose.yml run --rm web python manage.py test
 
       - name: Run linter (flake8)
         run: |
-          docker-compose run --rm web flake8 . --exit-zero
+          docker compose -f docker-compose.yml run --rm web flake8 . --exclude=*.pyc
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
+    environment: production  # Позволяет настроить approval (опционально)
+    concurrency: production  # Защита от параллельных деплоев
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.2.0  # ✅ Вместо @master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo " Переходим в каталог проекта"
-            cd ~/lms_project || { echo "❌ Директория ~/lms_project не найдена"; exit 1; }
+            set -e  # Останавливаемся при ошибке
 
-            echo " Получаем последние изменения из Git"
-            git stash || true
+            echo "🚀 Deploying to production"
+
+            # Проверяем, что папка существует
+            if [ ! -d "/home/${SSH_USERNAME}/lms_project" ]; then
+              echo "❌ Directory ~/lms_project not found. Clone manually first."
+              exit 1
+            fi
+
+            cd /home/${SSH_USERNAME}/lms_project
+
+            # Сохраняем локальные изменения (если есть)
+            echo "💾 Stashing any local changes..."
+            git stash --all || true
+
+            # Переключаемся на нужную ветку
+            echo "SetBranch to feature_35_2"
             git fetch origin
-            git checkout feature_9_docker_cicd
-            git pull origin feature_9_docker_cicd
+            git checkout feature_35_2
 
-            echo " Останавливаем текущие контейнеры"
-            docker compose down || true
+            echo "📥 Pulling latest changes"
+            git pull origin feature_35_2
 
-            echo " Собираем и запускаем контейнеры"
+            echo "🛑 Stopping containers"
+            docker compose down
+
+            echo "🏗️ Building and starting services"
             docker compose up -d --build
 
-            echo " Выполняем миграции"
-            docker compose exec web python manage.py migrate --noinput
+            echo "🔧 Running migrations"
+            docker compose exec -T web python manage.py migrate --noinput
 
-            echo " Собираем статику"
-            docker compose exec web python manage.py collectstatic --noinput
+            echo "📦 Collecting static files"
+            docker compose exec -T web python manage.py collectstatic --noinput --clear
+
+            echo "✅ Deploy completed successfully"
