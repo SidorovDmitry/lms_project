@@ -63,9 +63,9 @@ jobs:
         run: |
           cp .env.sample .env || echo "Using defaults"
 
-      - name: Build and start db + redis
+      - name: Build and start db only
         run: |
-          docker compose -f docker-compose.yml up -d db redis
+          docker compose -f docker-compose.yml up -d db
 
       - name: Wait for PostgreSQL
         run: |
