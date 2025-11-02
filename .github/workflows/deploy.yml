@@ -1,65 +1,83 @@
-test:
-  runs-on: ubuntu-latest
-  services:
-    db:
-      image: postgres:16
-      env:
-        POSTGRES_DB: ${{ env.POSTGRES_DB }}
-        POSTGRES_USER: ${{ env.POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-      ports:
-        - 5432:5432
-      options: >-
-        --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
-        --health-interval=10s
-        --health-timeout=5s
-        --health-retries=5
-    redis:
-      image: redis:7
-      ports:
-        - 6379:6379
+name: CI/CD Pipeline with Docker
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches:
+      - feature_35_2
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - main
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+env:
+  POSTGRES_DB: lmsdb
+  POSTGRES_USER: lmsuser
+  POSTGRES_PASSWORD: lmspass
 
-    - name: Cache pip
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Copy .env for testing
-      run: |
-        cp .env.sample .env || echo "Using defaults"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-    - name: Wait for PostgreSQL service
-      run: |
-        until pg_isready -h localhost -p 5432 -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}; do
-          echo "⏳ Waiting for PostgreSQL..."
-          sleep 5
-        done
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Apply migrations
-      run: |
-        docker compose -f docker-compose.yml run --rm web python manage.py migrate
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run tests
-      run: |
-        docker compose -f docker-compose.yml run --rm web python manage.py test
+      - name: Copy .env for testing
+        run: |
+          cp .env.sample .env || echo "Using defaults"
 
-    - name: Run linter (flake8)
-      run: |
-        docker compose -f docker-compose.yml run --rm web flake8 . --exclude=*.pyc
+      - name: Wait for PostgreSQL service
+        run: |
+          until pg_isready -h localhost -p 5432 -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}; do
+            echo "⏳ Waiting for PostgreSQL..."
+            sleep 5
+          done
+
+      - name: Apply migrations
+        run: |
+          docker compose -f docker-compose.yml run --rm web python manage.py migrate
+
+      - name: Run tests
+        run: |
+          docker compose -f docker-compose.yml run --rm web python manage.py test
+
+      - name: Run linter (flake8)
+        run: |
+          docker compose -f docker-compose.yml run --rm web flake8 . --exclude=*.pyc
