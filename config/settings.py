@@ -3,26 +3,23 @@ from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
-from dotenv import load_dotenv
+from environs import env
 
-load_dotenv(override=True)
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+env.read_env(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # ПРЕДУПРЕЖДЕНИЕ О БЕЗОПАСНОСТИ: держите секретный ключ, используемый в рабочей среде, в секрете!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # ПРЕДУПРЕЖДЕНИЕ О БЕЗОПАСНОСТИ: не запускайте приложение в рабочей среде с включенной отладкой!
-DEBUG = True if os.getenv('DEBUG') == 'True' else False
+DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-    '89.169.166.129',]
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '0.0.0.0'])
 
 
 # Application definition
@@ -107,11 +104,11 @@ SIMPLE_JWT = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.getenv("POSTGRES_DB_NAME"),
-        'USER': os.getenv("POSTGRES_DB_USER"),
-        'PASSWORD': os.getenv("POSTGRES_DB_PASSWORD"),
-        'HOST': os.getenv("POSTGRES_DB_HOST"),
-        'PORT': os.getenv("POSTGRES_DB_PORT"),
+        'NAME': env("POSTGRES_DB_NAME"),
+        'USER': env("POSTGRES_DB_USER"),
+        'PASSWORD': env("POSTGRES_DB_PASSWORD"),
+        'HOST': env("POSTGRES_DB_HOST"),
+        'PORT': env("POSTGRES_DB_PORT"),
     }
 }
 
@@ -148,7 +145,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -192,6 +189,6 @@ EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_SSL = True if os.getenv('EMAIL_USE_SSL') == 'True' else False
-EMAIL_USE_TLS = True if os.getenv('EMAIL_USE_TLS') == 'True' else False
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')

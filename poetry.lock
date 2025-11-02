@@ -585,6 +585,27 @@ offline = ["drf-spectacular-sidecar"]
 sidecar = ["drf-spectacular-sidecar"]
 
 [[package]]
+name = "environs"
+version = "14.4.0"
+description = "simplified environment variable parsing"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "environs-14.4.0-py3-none-any.whl", hash = "sha256:fcd1b0259a2ac1f9ce6e2d2bdbbd51483b83533c37cea1524d5d4abde611270a"},
+    {file = "environs-14.4.0.tar.gz", hash = "sha256:7d9151d0710fc1b02f68bec6863d804ed10121925fb658bbdcb9fc7ddf704f62"},
+]
+
+[package.dependencies]
+marshmallow = ">=3.18.0"
+python-dotenv = "*"
+
+[package.extras]
+dev = ["environs[tests]", "pre-commit (>=4.0,<5.0)", "tox"]
+django = ["dj-database-url", "dj-email-url", "django-cache-url"]
+tests = ["backports.strenum ; python_version < \"3.11\"", "environs[django]", "packaging", "pytest"]
+
+[[package]]
 name = "eventlet"
 version = "0.40.3"
 description = "Highly concurrent networking library"
@@ -792,6 +813,23 @@ sqlalchemy = ["sqlalchemy (>=1.4.48,<2.1)"]
 sqs = ["boto3 (>=1.26.143)", "urllib3 (>=1.26.16)"]
 yaml = ["PyYAML (>=3.10)"]
 zookeeper = ["kazoo (>=2.8.0)"]
+
+[[package]]
+name = "marshmallow"
+version = "4.1.0"
+description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "marshmallow-4.1.0-py3-none-any.whl", hash = "sha256:9901660499be3b880dc92d6b5ee0b9a79e94265b7793f71021f92040c07129f1"},
+    {file = "marshmallow-4.1.0.tar.gz", hash = "sha256:daa9862f74e2f7864980d25c29b4ea72944cde48aa17537e3bd5797a4ae62d71"},
+]
+
+[package.extras]
+dev = ["marshmallow[tests]", "pre-commit (>=3.5,<5.0)", "tox"]
+docs = ["autodocsumm (==0.2.14)", "furo (==2025.9.25)", "sphinx (==8.2.3)", "sphinx-copybutton (==0.5.2)", "sphinx-issues (==5.0.1)", "sphinxext-opengraph (==0.13.0)"]
+tests = ["pytest", "simplejson"]
 
 [[package]]
 name = "packaging"
@@ -1518,4 +1556,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "5302e0773478c9f1d01e2812a7c80bf7edc0fce127bc5685c0d79a1801cf5252"
+content-hash = "4c8d8e1f77c3d23f78783958aefb1151e72ef21f06ce024ab8b18989a42b8ee7"
