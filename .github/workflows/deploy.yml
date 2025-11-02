@@ -18,13 +18,19 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
+      SECRET_KEY: ${{ vars.SECRET_KEY }}
+
     services:
       db:
         image: postgres:16
         env:
-          POSTGRES_DB: ${{ env.POSTGRES_DB }}
-          POSTGRES_USER: ${{ env.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -61,11 +67,19 @@ jobs:
 
       - name: Copy .env for testing
         run: |
-          cp .env.sample .env || echo "Using defaults"
+          echo "SECRET_KEY=${SECRET_KEY}" > .env
+          echo "POSTGRES_DB_NAME=${POSTGRES_DB}" >> .env
+          echo "POSTGRES_DB_USER=${POSTGRES_USER}" >> .env
+          echo "POSTGRES_DB_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+          echo "POSTGRES_DB_HOST=localhost" >> .env
+          echo "POSTGRES_DB_PORT=5432" >> .env
+          echo "REDIS_URL=redis://localhost:6379/0" >> .env
+          echo "DEBUG=True" >> .env
+          echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
 
       - name: Wait for PostgreSQL
         run: |
-          until pg_isready -h localhost -p 5432 -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}; do
+          until pg_isready -h localhost -p 5432 -U ${{ vars.POSTGRES_USER }} -d ${{ vars.POSTGRES_DB }}; do
             echo "⏳ Waiting for PostgreSQL..."
             sleep 5
           done
@@ -73,91 +87,11 @@ jobs:
       - name: Apply migrations
         run: |
           python manage.py migrate
-        working-directory: .
 
       - name: Run tests
         run: |
           python manage.py test
-        working-directory: .
 
       - name: Run linter (flake8)
         run: |
           flake8 . --exclude=*.pyc
-        working-directory: .
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    environment: production
-    concurrency: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-
-            echo "🚀 Deploying to production"
-
-            if [ ! -d "/home/${SSH_USERNAME}/projects/lms_project" ]; then
-              echo "❌ Directory not found. Clone manually first."
-              exit 1
-            fi
-
-            cd /home/${SSH_USERNAME}/projects/lms_project
-
-            echo "💾 Stashing local changes..."
-            git stash --all || true
-
-            echo "🔄 Switching to ${GITHUB_REF#refs/heads/}"
-            git fetch origin
-            git checkout ${GITHUB_REF#refs/heads/}
-
-            echo "📥 Pulling latest changes"
-            git pull origin ${GITHUB_REF#refs/heads/} --force-with-lease
-
-            echo "🛑 Stopping containers"
-            docker compose down
-
-            echo "🧹 Cleaning Docker builder cache"
-            docker builder prune -f --filter "until=1h" || true
-
-            echo "🏗️ Building and starting services"
-            docker compose up -d --build --force-recreate
-
-            echo "🔧 Running migrations"
-            docker compose exec -T web python manage.py migrate --noinput
-
-            echo "📦 Collecting static files"
-            docker compose exec -T web python manage.py collectstatic --noinput --clear
-
-            echo "✅ Deploy completed successfully"
-
-      - name: Notify Success (Telegram)
-        if: success()
-        uses: appleboy/telegram-action@v1
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ✅ Deploy succeeded!
-            🚀 Branch: `${{ github.ref_name }}`
-            🔗 [View run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-      - name: Notify Failure (Telegram)
-        if: failure()
-        uses: appleboy/telegram-action@v1
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ❌ Deploy failed!
-            🚨 Branch: `${{ github.ref_name }}`
-            🔗 [View run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
