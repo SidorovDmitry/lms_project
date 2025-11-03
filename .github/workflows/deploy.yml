@@ -95,3 +95,52 @@ jobs:
       - name: Run linter (flake8)
         run: |
           flake8 . --exclude=*.pyc
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "🚀 Deploying to production"
+            if [ ! -d "/home/${SSH_USERNAME}/projects/lms_project" ]; then
+              echo "❌ Directory not found."
+              exit 1
+            fi
+            cd /home/${SSH_USERNAME}/projects/lms_project
+            git stash --all || true
+            git fetch origin
+            git checkout ${GITHUB_REF#refs/heads/}
+            git pull origin ${GITHUB_REF#refs/heads/} --force-with-lease
+            docker compose down
+            docker builder prune -f --filter "until=1h" || true
+            docker compose up -d --build --force-recreate
+            docker compose exec -T web python manage.py migrate --noinput
+            docker compose exec -T web python manage.py collectstatic --noinput --clear
+            echo "✅ Deploy completed"
+
+      - name: Notify Success (Telegram)
+        if: success()
+        uses: appleboy/telegram-action@v1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ Deploy succeeded! ${{ github.ref_name }}
+
+      - name: Notify Failure (Telegram)
+        if: failure()
+        uses: appleboy/telegram-action@v1
+        with:
