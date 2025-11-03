@@ -68,8 +68,8 @@ services:
       mailhog:
         condition: service_started
     volumes:
-      - .:/app
-      - media:/app/media
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
 
   # Celery Worker
   celery-worker:
@@ -129,6 +129,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  media:
   media_volume:
   static_volume:
