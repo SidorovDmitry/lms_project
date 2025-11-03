@@ -9,55 +9,76 @@ env:
   DB_USER: ${{ secrets.DB_USER }}
   DB_NAME: ${{ secrets.DB_NAME }}
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  DB_HOST: db
+  DB_HOST: localhost
 
 jobs:
   test:
     runs-on: ubuntu-latest
     services:
-      postgres:
+      db:
         image: postgres:13
         env:
           POSTGRES_USER: ${{ secrets.DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
           POSTGRES_DB: ${{ secrets.DB_NAME }}
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd=pg_isready
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
         ports:
           - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Docker
-        uses: docker/setup-docker-action@v3
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-      - name: Build services
+      - name: Install dependencies
         run: |
-          docker compose build
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Copy .env for testing
+        run: |
+          cat <<EOL > .env
+          DEBUG=True
+          SECRET_KEY=django-insecure-for-test-only
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          POSTGRES_DB_NAME=${{ secrets.DB_NAME }}
+          POSTGRES_DB_USER=${{ secrets.DB_USER }}
+          POSTGRES_DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB_HOST=localhost
+          POSTGRES_DB_PORT=5432
+          REDIS_URL=redis://localhost:6379/0
+          EOL
 
       - name: Wait for PostgreSQL
         run: |
           until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USER }}; do
-            echo "Waiting for PostgreSQL..."
+            echo "⏳ Waiting for PostgreSQL..."
             sleep 5
           done
 
-      - name: Run database migrations
+      - name: Apply migrations
         run: |
-          docker compose run --rm web python manage.py migrate
+          python manage.py migrate
 
       - name: Run tests
         run: |
-          docker compose run --rm web python manage.py test
+          python manage.py test
 
       - name: Run linter
         run: |
-          docker compose run --rm web flake8 . --exit-zero
+          flake8 . --exit-zero --exclude=*.pyc
 
   deploy:
     needs: test
@@ -66,29 +87,19 @@ jobs:
 
     steps:
       - name: Deploy to server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            
             cd ~/lms_project
-            
-            echo "🔄 Getting latest changes..."
             git fetch origin
             git checkout feature_35_2
             git reset --hard origin/feature_35_2
-            
-            echo "🐳 Restarting containers..."
             docker compose down
             docker compose up -d --build
-            
-            echo "📦 Applying migrations..."
-            docker compose exec web python manage.py migrate --noinput
-            
-            echo "📁 Collecting static files..."
-            docker compose exec web python manage.py collectstatic --noinput --clear
-            
-            echo "✅ Deployment completed successfully!"
+            docker compose exec -T web python manage.py migrate --noinput
+            docker compose exec -T web python manage.py collectstatic --noinput --clear
+            echo "✅ Deploy completed!"
