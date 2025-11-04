@@ -5,12 +5,6 @@ on:
     branches:
       - feature_35_2
 
-env:
-  DB_USER: ${{ secrets.DB_USER }}
-  DB_NAME: ${{ secrets.DB_NAME }}
-  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  DB_HOST: localhost
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -35,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -46,35 +40,41 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install flake8
 
-      - name: Copy .env for testing
+      - name: Wait for Redis
         run: |
-          cat <<EOL > .env
-          DEBUG=True
-          SECRET_KEY=django-insecure-for-test-only
-          ALLOWED_HOSTS=localhost,127.0.0.1
-          POSTGRES_DB_NAME=${{ secrets.DB_NAME }}
-          POSTGRES_DB_USER=${{ secrets.DB_USER }}
-          POSTGRES_DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB_HOST=localhost
-          POSTGRES_DB_PORT=5432
-          REDIS_URL=redis://localhost:6379/0
-          EOL
-
-      - name: Wait for PostgreSQL
-        run: |
-          until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USER }}; do
-            echo "⏳ Waiting for PostgreSQL..."
+          until redis-cli -h localhost -p 6379 PING | grep -q "PONG"; do
+            echo "⏳ Waiting for Redis..."
             sleep 5
           done
+          echo "✅ Redis is ready!"
 
       - name: Apply migrations
-        run: |
-          python manage.py migrate
+        env:
+          DEBUG: True
+          SECRET_KEY: django-insecure-for-test-only
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          POSTGRES_DB_NAME: ${{ secrets.DB_NAME }}
+          POSTGRES_DB_USER: ${{ secrets.DB_USER }}
+          POSTGRES_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB_HOST: localhost
+          POSTGRES_DB_PORT: 5432
+          REDIS_URL: redis://localhost:6379/0
+        run: python manage.py migrate
 
       - name: Run tests
-        run: |
-          python manage.py test
+        env:
+          DEBUG: True
+          SECRET_KEY: django-insecure-for-test-only
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          POSTGRES_DB_NAME: ${{ secrets.DB_NAME }}
+          POSTGRES_DB_USER: ${{ secrets.DB_USER }}
+          POSTGRES_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB_HOST: localhost
+          POSTGRES_DB_PORT: 5432
+          REDIS_URL: redis://localhost:6379/0
+        run: python manage.py test
 
       - name: Run linter
         run: |
@@ -98,8 +98,17 @@ jobs:
             git fetch origin
             git checkout feature_35_2
             git reset --hard origin/feature_35_2
-            docker compose down
-            docker compose up -d --build
+            docker compose down --remove-orphans
+            docker compose up -d --build --force-recreate
             docker compose exec -T web python manage.py migrate --noinput
             docker compose exec -T web python manage.py collectstatic --noinput --clear
-            echo "✅ Deploy completed!"
+
+            # Проверка состояния сервисов
+            echo "📊 Checking container status..."
+            if ! docker compose ps | grep -q "Up"; then
+              echo "❌ One or more services failed to start"
+              docker compose logs --tail=50
+              exit 1
+            fi
+
+            echo "✅ Deploy completed successfully!"
